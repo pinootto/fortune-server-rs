@@ -2,11 +2,14 @@
 
 This is a web service (APIs) that provides text messages taken from a UNIX "fortune" database (file).
 
+For each request the service replies with a new message taken randomly from the fortune files.
+
 ## Demo
 
 This demo uses a couple of fortune files that contain English words with their definition, synonyms and example
 
 [long version](https://gioyingtec.com/fortune/english)
+
 [short version](https://gioyingtec.com/fortune/english?size=Short)
 
 ## Plan
