@@ -1,6 +1,12 @@
+use std::process::Command;
+
+use axum::extract::Query;
+use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
 use clap::Parser;
+use serde::Deserialize;
+use tokio::io::AsyncBufReadExt;
 use tokio::net::TcpListener;
 use tracing::info;
 
@@ -11,6 +17,17 @@ pub struct WebArgs {
     #[arg(default_value_t = 4002)]
     #[arg(value_parser = clap::value_parser!(u16).range(0..=65535))]
     port: u16,
+}
+
+#[derive(Debug, Deserialize)]
+struct QueryParams {
+    size: Option<Size>,
+}
+
+#[derive(Debug, Deserialize)]
+enum Size {
+    Short,
+    Long,
 }
 
 #[tokio::main]
@@ -34,9 +51,29 @@ async fn main() {
 }
 
 async fn home() -> &'static str {
-    "get an english word with definition"
+    "get an english word with definition\n"
 }
 
-async fn english_word() {
-    todo!();
+async fn english_word(Query(params): Query<QueryParams>) -> impl IntoResponse {
+    let size = params.size.unwrap_or(Size::Long);
+    let output = Command::new("/usr/games/fortune")
+        .arg("magoosh_common")
+        .arg("magoosh_adv")
+        .output()
+        .unwrap();
+    info!("command status = {}", output.status);
+    let text = output.stdout;
+    let response = match size {
+        Size::Long => String::from_utf8(text).unwrap(),
+        Size::Short => {
+            let mut lines = text.lines();
+            format!(
+                "{}\n{}\n",
+                lines.next_line().await.unwrap().unwrap(),
+                lines.next_line().await.unwrap().unwrap()
+            )
+        }
+    };
+    info!("{}", response);
+    response
 }
